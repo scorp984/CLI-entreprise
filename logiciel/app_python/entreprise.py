@@ -1,4 +1,5 @@
 # Importation des modules nécessaires
+from pathlib import Path
 from employes import employes, ajouter_employe, enlever_employe
 from datetime import datetime
 
@@ -79,7 +80,7 @@ if anciennete >= 2:
 
 
 # Chemin du fichier où sauvegarder les données du comptable
-write_path = "./comptable.txt"
+write_path = Path(__file__).resolve().parent.parent / "storage" / "comptable.txt"
 
 # Ouvrir le fichier en mode ajout (ne pas écraser les anciennes données)
 append_file = open(write_path, "a")
