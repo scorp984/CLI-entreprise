@@ -1,0 +1,29 @@
+# Dossiers de cache Python
+__pycache__/
+
+# Fichiers compilés Python
+*.pyc
+*.pyo
+*.pyd
+
+# Dossiers de distribution
+dist/
+build/
+
+# Fichiers de virtualenv
+venv/
+env/
+ENV/
+
+# Fichiers IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Fichiers du système
+.DS_Store
+Thumbs.db
+
+
+comptable.txt
