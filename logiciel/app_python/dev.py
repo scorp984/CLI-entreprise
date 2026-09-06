@@ -45,10 +45,22 @@ class developpeur:
         print(f"Le développeur travaille sur le projet : {nom_projet}")
 
         if nom_projet == "final":
-            date_fin_projet = input("Entrez la date de fin du projet (format JJ/MM/AAAA) : ")
+            date_fin_projet = input(
+                "Entrez la date de fin du projet (format JJ/MM/AAAA) : "
+            )
             date_fin_projet = datetime.strptime(date_fin_projet, "%d/%m/%Y")
             date_actuelle = datetime.now()
-            print(f"Le projet {nom_projet} est terminé depuis le {date_actuelle.strftime('%d/%m/%Y')}.")
+            if date_fin_projet <= date_actuelle:
+                print(
+                    f"Le projet {nom_projet} est terminé depuis le "
+                    f"{date_fin_projet.strftime('%d/%m/%Y')}."
+                )
+            else:
+                print(
+                    f"Le projet {nom_projet} se terminera le "
+                    f"{date_fin_projet.strftime('%d/%m/%Y')}."
+                )
+
 
 
 

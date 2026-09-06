@@ -35,69 +35,64 @@ class comptable:
         return anciennete
     
 
-# ===== PROGRAMME PRINCIPAL =====
+def main():
+    nom_recherche = input("Entrez le nom de l'employé à choisir : ")
+    prenom_recherche = input("Entrez le prénom de l'employé à choisir : ")
 
-# Demander à l'utilisateur le nom et le prénom de l'employé à rechercher
-nom_recherche = input("Entrez le nom de l'employé à choisir : ")
-prenom_recherche = input("Entrez le prénom de l'employé à choisir : ")
+    employe_trouve = next(
+        (
+            employe
+            for employe in employes
+            if employe["nom"] == nom_recherche
+            and employe["prenom"] == prenom_recherche
+        ),
+        None,
+    )
 
-# Variable pour stocker l'employé trouvé
-employe_trouve = None
+    if employe_trouve is None:
+        print("Aucun employé trouvé avec ce nom et ce prénom.")
+        return
 
-# Parcourir la liste des employés pour trouver celui recherché
-for e in employes:
-    if e["nom"] == nom_recherche and e["prenom"] == prenom_recherche:
-        employe_trouve = e
-        break
-
-# Vérifier si l'employé a été trouvé
-if employe_trouve is None:
-    print("Aucun employé trouvé avec ce nom et ce prénom.")
-else:
-    # Créer une instance de comptable avec les données de l'employé
-    employe = comptable("Nom", "Prenom", employe_trouve["salaire"])
-    
-    # Demander le pourcentage d'augmentation à l'utilisateur
+    employe = comptable(
+        employe_trouve["nom"],
+        employe_trouve["prenom"],
+        employe_trouve["salaire"],
+    )
     augmentation = float(input("Veuillez entrer le pourcentage d'augmentation : "))
-    
-    # Appliquer l'augmentation au salaire
     employe.augmenter_salaire(augmentation)
     nouveau_salaire = employe.salaire
 
-# Afficher le nouveau salaire après augmentation
-print(f"Le nouveau salaire de {employe_trouve['prenom']} {employe_trouve['nom']} est : {nouveau_salaire}")
+    print(
+        f"Le nouveau salaire de {employe_trouve['prenom']} "
+        f"{employe_trouve['nom']} est : {nouveau_salaire}"
+    )
 
-# Calculer l'ancienneté de l'employé
-anciennete = employe.anciennete(employe_trouve["date_embauche"])
-
-# Vérifier si l'employé a au moins 2 ans d'ancienneté
-if anciennete >= 2:
-    employe.salaire += 200
-    if employe.salaire > 3200:
-        employe.salaire = 3200
+    anciennete = employe.anciennete(employe_trouve["date_embauche"])
     salaire_anciennete = employe.salaire
-    print(f"L'employé a {anciennete} ans d'ancienneté. Son salaire après l'augmentation pour ancienneté est : {salaire_anciennete}")
+    if anciennete >= 2:
+        employe.salaire = min(employe.salaire + 200, 3200)
+        salaire_anciennete = employe.salaire
+        print(
+            f"L'employé a {anciennete} ans d'ancienneté. "
+            f"Son salaire après l'augmentation pour ancienneté est : "
+            f"{salaire_anciennete}"
+        )
+
+    write_path = Path(__file__).resolve().parent.parent / "storage" / "comptable.txt"
+    with write_path.open("a", encoding="utf-8") as append_file:
+        append_file.write(f"Nom: {employe_trouve['nom']}\n")
+        append_file.write(f"Prénom: {employe_trouve['prenom']}\n")
+        append_file.write(f"Ancien salaire: {employe_trouve['salaire']}\n")
+        append_file.write(f"Date d'embauche: {employe_trouve['date_embauche']}\n")
+        append_file.write(f"Ancienneté: {anciennete} ans\n")
+        append_file.write(f"Pourcentage d'augmentation: {augmentation}%\n")
+        append_file.write(f"Nouveau salaire: {nouveau_salaire}\n")
+        append_file.write(f"Salaire après ancienneté: {salaire_anciennete}\n")
+        append_file.write("-" * 30 + "\n")
 
 
-# Chemin du fichier où sauvegarder les données du comptable
-write_path = Path(__file__).resolve().parent.parent / "storage" / "comptable.txt"
-
-# Ouvrir le fichier en mode ajout (ne pas écraser les anciennes données)
-append_file = open(write_path, "a")
-
-# Écrire les informations de l'employé dans le fichier
-append_file.write(f"Nom: {employe_trouve['nom']}\n")
-append_file.write(f"Prénom: {employe_trouve['prenom']}\n")
-append_file.write(f"Ancien salaire: {employe_trouve['salaire']}\n")
-append_file.write(f"Date d'embauche: {employe_trouve['date_embauche']}\n")
-append_file.write(f"Ancienneté: {anciennete} ans\n")
-append_file.write(f"Pourcentage d'augmentation: {augmentation}%\n")
-append_file.write(f"Nouveau salaire: {nouveau_salaire}\n")
-append_file.write(f"Salaire après ancienneté: {salaire_anciennete}\n")
-append_file.write("-" * 30 + "\n")  # séparateur entre chaque entrée
-
-# Fermer le fichier
-append_file.close()
+if __name__ == "__main__":
+    main()
 
 
 

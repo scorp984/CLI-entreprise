@@ -24,7 +24,7 @@ class manager:
         if employe["poste"] == "developpeur":
             print(
                 f"Le développeur {employe['prenom']} {employe['nom']}"
-                f"réalise la tâche « {tache} » sur le projet « {nom_projet} »."
+                f" réalise la tâche « {tache} » sur le projet « {nom_projet} »."
             )
         else:
             print("Ce salarié n'est pas un développeur.")
