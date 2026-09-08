@@ -1,6 +1,9 @@
 # Importation des modules nécessaires
 from pathlib import Path
-from employes import employes, ajouter_employe, enlever_employe
+try:
+    from .employes import employes, ajouter_employe, enlever_employe
+except ImportError:
+    from employes import employes, ajouter_employe, enlever_employe
 from datetime import datetime
 
 # Classe pour gérer les comptables et leurs salaires

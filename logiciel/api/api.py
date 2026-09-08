@@ -11,7 +11,7 @@ app = Flask(__name__)
 def get_employes():
     conn = get_connection()
     if conn is None:
-        return jsonify({"error": "Erreur de connexion à la base de données"}), 400
+        return jsonify({"error": "Erreur de connexion à la base de données"}), 500
 
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM employes")
@@ -23,7 +23,15 @@ def get_employes():
 
 @app.route("/employes", methods=["POST"])
 def add_employe():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Le corps JSON est obligatoire"}), 400
+
+    required_fields = ("nom", "prenom", "poste", "date_embauche", "salaire")
+
+    if any(not data.get(field) for field in required_fields):
+        return jsonify({"error": "Tous les champs sont obligatoires"}), 400
+
     nom = data.get("nom")
     prenom = data.get("prenom")
     poste = data.get("poste")
@@ -43,7 +51,7 @@ def add_employe():
 
     return jsonify({"message": "Employé ajouté avec succès"}), 201
 
-@app.route("/employes/<id>", methods=["DELETE"])
+@app.route("/employes/<int:id>", methods=["DELETE"])
 def delete_employe(id):
     conn = get_connection()
     if conn is None:
@@ -51,16 +59,27 @@ def delete_employe(id):
 
     cursor = conn.cursor()
     cursor.execute("DELETE FROM employes WHERE id = %s", (id,))
+    deleted = cursor.rowcount
     conn.commit()
     cursor.close()
     conn.close()
 
+    if deleted == 0:
+        return jsonify({"error": "Employé introuvable"}), 404
+
     return jsonify({"message": "Employé supprimé avec succès"}), 200
 
 
-@app.route("/employes", methods=["PUT"])
-def update_employe():
-    data = request.get_json()
+@app.route("/employes/<int:id>", methods=["PUT"])
+def update_employe(id):
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Le corps JSON est obligatoire"}), 400
+
+    required_fields = ("nom", "prenom", "poste", "date_embauche", "salaire")
+    if any(not data.get(field) for field in required_fields):
+        return jsonify({"error": "Tous les champs sont obligatoires"}), 400
+
     nom = data.get("nom")
     prenom = data.get("prenom")
     poste = data.get("poste")
@@ -73,12 +92,16 @@ def update_employe():
 
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE employes SET prenom = %s, poste = %s, date_embauche = %s, salaire = %s WHERE nom = %s",
-        (prenom, poste, date_embauche, salaire, nom),
+        "UPDATE employes SET nom = %s, prenom = %s, poste = %s, date_embauche = %s, salaire = %s WHERE id = %s",
+        (nom, prenom, poste, date_embauche, salaire, id),
     )
+    updated = cursor.rowcount
     conn.commit()
     cursor.close()
     conn.close()
+
+    if updated == 0:
+        return jsonify({"error": "Employé introuvable"}), 404
 
     return jsonify({"message": "Employé mis à jour avec succès"}), 200
 

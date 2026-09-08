@@ -1,5 +1,9 @@
-from dev import developpeur
-from employes import employes
+try:
+    from .dev import developpeur
+    from .employes import employes
+except ImportError:
+    from dev import developpeur
+    from employes import employes
 
 
 class manager:

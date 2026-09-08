@@ -13,3 +13,4 @@ def get_connection():
     except Error as e:
         print(f"Erreur de connexion : {e}")
         return None
+
