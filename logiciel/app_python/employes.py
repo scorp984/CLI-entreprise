@@ -21,6 +21,3 @@ def modifier_employe(nom, prenom, poste, date_embauche, salaire):
             e["salaire"] = salaire
             return
     print(f"Aucun employé nommé {nom} trouvé.")
-
-
-

@@ -1,22 +1,21 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/page_connecte.css">
-    <title>page de connexion</title>
+    <link rel="stylesheet" href="../css/page-inscription.css">
+    <title>Page d'inscription</title>
 </head>
-<body>  
-    <h1>bienvenue</h1>
-    <form id="login-form">
+<body>
+    <h1>Créer un compte</h1>
+    <form id="creation-compte">
         <label for="username">Nom d'utilisateur:</label>
         <input type="text" id="username" name="identifiant" required><br><br>
         <label for="password">Mot de passe:</label>
         <input type="password" id="password" name="mot_de_passe" required><br><br>
-        <input type="submit" value="Se connecter">
-        <p id="login-message" role="alert" aria-live="polite"></p>
-        <p><a href="page-inscription.html">Créer un nouveau compte</a></p>
+        <input type="submit" value="Créer un compte">
+        <p id="inscription-message" role="alert" aria-live="polite"></p>
     </form>
-    <script src="../js/connextion.js"></script>
+    <script src="../js/inscription.js"></script>
 </body>
 </html>
