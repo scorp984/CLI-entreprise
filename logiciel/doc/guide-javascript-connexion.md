@@ -4,7 +4,7 @@ Ce guide explique comment connecter le formulaire HTML a l'API Flask.
 
 ## 1. Les fichiers utilises
 
-- Page HTML : `frontend/html/page-connect.html`
+- Page HTML : `frontend/html/index.html`
 - JavaScript : `frontend/js/connextion.js`
 - API Flask : `api/api.py`
 
@@ -216,7 +216,7 @@ L'API doit etre disponible a cette adresse :
 http://127.0.0.1:5000
 ```
 
-Ensuite, ouvre `page-connect.html` avec Live Server.
+Ensuite, ouvre `frontend/html/index.html` avec Live Server. Cette page contient directement le formulaire de connexion.
 
 ## 11. Tester la connexion
 

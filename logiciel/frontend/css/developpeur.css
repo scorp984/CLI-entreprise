@@ -1,0 +1,185 @@
+* {
+	box-sizing: border-box;
+}
+
+body {
+	min-height: 100vh;
+	margin: 0;
+	padding: 40px 48px;
+	background: #f0f0f0;
+	color: #222;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+main,
+.projet {
+	width: 100%;
+	margin: 0;
+}
+
+h1 {
+	margin: 0 0 8px;
+	color: #111;
+	font-size: 32px;
+}
+
+.subtitle {
+	margin: 0 0 32px;
+	color: #555;
+	font-size: 15px;
+	line-height: 1.5;
+}
+
+.panel,
+.projet {
+	padding: 28px;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 10px;
+	box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+}
+
+.panel {
+	display: none;
+}
+
+.panel.visible {
+	display: block;
+}
+
+.panel h2,
+.projet h2 {
+	margin: 0 0 16px;
+	color: #111;
+	font-size: 20px;
+}
+
+#fiche-panel > p {
+	margin: 0 0 10px;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+form {
+	display: grid;
+	gap: 8px;
+	max-width: 520px;
+}
+
+label {
+	margin-top: 8px;
+	color: #333;
+	font-size: 14px;
+}
+
+input {
+	width: 100%;
+	min-height: 40px;
+	padding: 9px 10px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	color: #222;
+	font: inherit;
+}
+
+input:focus {
+	border-color: #555;
+	outline: 2px solid rgb(28 28 28 / 15%);
+	outline-offset: 1px;
+}
+
+.btn {
+	min-height: 38px;
+	margin: 16px 8px 0 0;
+	padding: 9px 16px;
+	border: 1px solid #1c1c1c;
+	border-radius: 5px;
+	background: #1c1c1c;
+	color: #fff;
+	font: inherit;
+	cursor: pointer;
+}
+
+.btn:hover {
+	background: #333;
+}
+
+.btn:focus-visible {
+	outline: 2px solid #555;
+	outline-offset: 2px;
+}
+
+.resultat {
+	min-height: 20px;
+	margin-top: 20px;
+	padding: 12px 14px;
+	border-radius: 5px;
+	background: #f7f7f7;
+	color: #333;
+	font-size: 14px;
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+.projet {
+	margin-top: 20px;
+	overflow: hidden;
+}
+
+#projets-table {
+	width: 100%;
+	border-collapse: collapse;
+	text-align: left;
+}
+
+#projets-table th,
+#projets-table td {
+	padding: 11px 12px;
+	border-bottom: 1px solid #ddd;
+	vertical-align: top;
+	line-height: 1.45;
+	overflow-wrap: anywhere;
+}
+
+#projets-table th {
+	background: #333;
+	color: #fff;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+#projets-table tbody tr:nth-child(even) {
+	background: #f8f8f8;
+}
+
+#projets-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+@media (max-width: 640px) {
+	body {
+		padding: 24px 16px;
+	}
+
+	h1 {
+		font-size: 26px;
+	}
+
+	.subtitle {
+		margin-bottom: 22px;
+	}
+
+	.panel,
+	.projet {
+		padding: 18px;
+	}
+
+	#projets-table {
+		font-size: 13px;
+	}
+
+	#projets-table th,
+	#projets-table td {
+		padding: 9px 7px;
+	}
+}

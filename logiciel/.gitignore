@@ -27,3 +27,8 @@ Thumbs.db
 
 
 comptable.txt
+
+
+# Fichiers de configuration
+*.pyc
+.env

@@ -1,0 +1,89 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.employees-page {
+    min-height: 100vh;
+    padding: 2rem;
+    background-color: #f4f4f4;
+    color: #222;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.employees-page h1 {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto 1.5rem;
+    font-size: 2rem;
+}
+
+.employees-page #employes_wrapper {
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.employees-page .dt-search,
+.employees-page .dt-length,
+.employees-page .dt-info,
+.employees-page .dt-paging {
+    color: #444;
+    font-size: 0.9rem;
+}
+
+.employees-page .dt-input {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.9rem;
+}
+
+.employees-page .dt-input:focus {
+    outline: none;
+    border-color: #888;
+}
+
+.employees-page table.dataTable {
+    width: 100% !important;
+    margin: 1rem 0 !important;
+    border-collapse: collapse;
+}
+
+.employees-page table.dataTable thead th {
+    background-color: #333;
+    color: #fff;
+    font-weight: normal;
+}
+
+.employees-page table.dataTable tbody tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+.employees-page table.dataTable tbody tr:hover {
+    background-color: #eee;
+}
+
+.employees-page .dt-paging-button {
+    border-radius: 3px !important;
+}
+
+@media (max-width: 600px) {
+    body.employees-page {
+        padding: 1rem;
+    }
+
+    .employees-page h1 {
+        font-size: 1.6rem;
+    }
+
+    .employees-page #employes_wrapper {
+        padding: 1rem;
+        overflow-x: auto;
+    }
+}

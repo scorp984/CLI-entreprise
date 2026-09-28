@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/manager.css">
+    <title>Document</title>
+</head>
+<body>
+  <h1>Bienvenue dans votre espace manager</h1>
+  <p class="subtitle">Gérez vos développeurs et l'organisation de vos projets.</p>
+ 
+  <div class="cards">
+    <div class="card" data-target="panel-attribuer">
+      <h2>Attribuer un projet</h2>
+      <p>Attribuez un nouveau projet à un développeur (tâches par défaut ajoutées automatiquement).</p>
+    </div>
+    <div class="card" data-target="panel-gerer">
+      <h2>Gérer mes développeurs</h2>
+      <p>Consultez la fiche technique d'un développeur.</p>
+    </div>
+    <div class="card" data-target="panel-quifaitquoi">
+      <h2>Qui fait quoi ?</h2>
+      <p>Voyez quel développeur réalise quelle tâche sur un projet.</p>
+    </div>
+    <div class="card" data-target="panel-equipe">
+      <h2>Constituer une équipe</h2>
+      <p>Formez une équipe de développeurs pour un projet donné.</p>
+    </div>
+    <div class="card"  href= "../html/index.html"id="logout-card">
+      <h2>Déconnexion</h2>
+      <p>Fermez votre session sur cet appareil.</p>
+    </div>
+  </div>
+ 
+  <!-- Panel : Attribuer un projet -->
+  <div class="panel" id="panel-attribuer">
+    <h3>Attribuer un projet</h3>
+
+    <label>Développeur</label>
+    <select id="attribuer-employe"></select>
+
+    <label>Nom du projet</label>
+    <input type="text" id="attribuer-projet" placeholder="Ex : Refonte API">
+
+    <label>Tâches à réaliser (séparées par des virgules)</label>
+    <input type="text" id="attribuer-taches" placeholder="Ex : Développement, Tests, Documentation">
+
+    <label>Date de début</label>
+    <input type="date" id="attribuer-date">
+
+    <button class="btn" onclick="attribuerProjet()">Attribuer</button>
+    
+    <div class="resultat" id="resultat-attribuer"></div>
+  </div>
+ 
+  <!-- Panel : Gérer mes développeurs -->
+  <div class="panel" id="panel-gerer">
+    <h3>Gérer mes développeurs</h3>
+    <label>Développeur</label>
+    <select id="gerer-employe"></select>
+    <button class="btn" onclick="gererDeveloppeur()">Voir la fiche technique</button>
+    <div class="resultat" id="resultat-gerer"></div>
+  </div>
+ 
+  <!-- Panel : Qui fait quoi -->
+  <div class="panel" id="panel-quifaitquoi">
+    <h3>Qui fait quoi ?</h3>
+    <label>Développeur</label>
+    <select id="qfq-employe"></select>
+    <button class="btn" onclick="quiFaitQuoi()">Voir ses projets et ses tâches</button>
+    <div class="resultat" id="resultat-qfq"></div>
+  </div>
+ 
+  <!-- Panel : Constituer une équipe -->
+  <div class="panel" id="panel-equipe">
+    <h3>Constituer une équipe</h3>
+    <label>Nom du projet</label>
+    <input type="text" id="equipe-projet" placeholder="Ex : Refonte API">
+    <label for="equipe-developpeurs">Développeurs de l'équipe</label>
+    <select id="equipe-developpeurs" multiple size="5"></select>
+    <div id="equipe-taches" aria-live="polite"></div>
+    <label for="equipe-date">Date de début</label>
+    <input type="date" id="equipe-date">
+    <button class="btn" onclick="equipeProjet()">Constituer l'équipe</button>
+    <div class="resultat" id="resultat-equipe"></div>
+  </div>
+  <script src="../js/manager.js"></script>
+</body>
+</html>

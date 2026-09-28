@@ -1,21 +1,112 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../css/page-inscription.css">
-    <title>Page d'inscription</title>
+    <title>Gestion des comptes</title>
 </head>
 <body>
-    <h1>Créer un compte</h1>
-    <form id="creation-compte">
-        <label for="username">Nom d'utilisateur:</label>
-        <input type="text" id="username" name="identifiant" required><br><br>
-        <label for="password">Mot de passe:</label>
-        <input type="password" id="password" name="mot_de_passe" required><br><br>
-        <input type="submit" value="Créer un compte">
-        <p id="inscription-message" role="alert" aria-live="polite"></p>
-    </form>
+    <main class="account-admin">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">Administration</p>
+                <h1>Gestion des comptes</h1>
+            </div>
+            <a class="back-link" href="page-pdg.html">Retour à l'espace PDG</a>
+        </header>
+
+        <p id="inscription-message" class="status-message" role="status" aria-live="polite"></p>
+
+        <section class="account-section" aria-labelledby="create-title">
+            <h2 id="create-title">Créer un compte</h2>
+            <form id="creation-compte" class="account-form">
+                <label for="nom">Nom</label>
+                <input type="text" id="nom" name="nom" autocomplete="family-name" required>
+
+                <label for="prenom">Prénom</label>
+                <input type="text" id="prenom" name="prenom" autocomplete="given-name" required>
+
+                <label for="username">Identifiant</label>
+                <input type="text" id="username" name="identifiant" autocomplete="username" required>
+
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" name="mot_de_passe" autocomplete="new-password" required>
+
+                <label for="role">Rôle</label>
+                <select id="role" name="role" required>
+                    <option value="manager">Manager</option>
+                    <option value="comptable">Comptable</option>
+                    <option value="developpeur">Développeur</option>
+                </select>
+
+                <label for="date-embauche">Date d'embauche</label>
+                <input type="date" id="date-embauche" name="date_embauche" required>
+
+                <label for="salaire">Salaire</label>
+                <input type="number" id="salaire" name="salaire" min="0" step="0.01" required>
+
+                <button class="primary-button" type="submit">Créer le compte</button>
+            </form>
+        </section>
+
+        <section class="account-section" aria-labelledby="accounts-title">
+            <div class="section-heading">
+                <h2 id="accounts-title">Comptes existants</h2>
+                <button id="refresh-comptes" class="secondary-button" type="button" aria-label="Actualiser la liste">
+                    Actualiser
+                </button>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Identifiant</th>
+                            <th scope="col">Rôle</th>
+                            <th scope="col">État</th>
+                            <th scope="col">Créé le</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comptes-body">
+                        <tr><td colspan="5">Chargement des comptes…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="edition-section" class="account-section" aria-labelledby="edit-title" hidden>
+            <h2 id="edit-title">Modifier un compte</h2>
+            <form id="edition-compte" class="account-form edit-form">
+                <input type="hidden" id="edit-id">
+
+                <label for="edit-identifiant">Identifiant</label>
+                <input type="text" id="edit-identifiant" required>
+
+                <label for="edit-role">Rôle</label>
+                <select id="edit-role">
+                    <option value="manager">Manager</option>
+                    <option value="comptable">Comptable</option>
+                    <option value="developpeur">Développeur</option>
+                    <option value="rh">RH</option>
+                    <option value="employe">Employé</option>
+                </select>
+
+                <label for="edit-password">Nouveau mot de passe</label>
+                <input type="password" id="edit-password" autocomplete="new-password" placeholder="Laisser vide pour conserver">
+
+                <label class="checkbox-label" for="edit-actif">
+                    <input type="checkbox" id="edit-actif">
+                    Compte actif
+                </label>
+
+                <div class="form-actions">
+                    <button class="primary-button" type="submit">Enregistrer</button>
+                    <button id="cancel-edit" class="secondary-button" type="button">Annuler</button>
+                </div>
+            </form>
+        </section>
+    </main>
     <script src="../js/inscription.js"></script>
 </body>
 </html>
