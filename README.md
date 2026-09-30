@@ -77,6 +77,17 @@ Dans le même terminal, lancer l'API :
 
 Dans VS Code, ouvrir `logiciel/frontend/html/index.html` avec Live Server. L'interface locale est prévue pour `http://127.0.0.1:5500` ou `http://localhost:5500`.
 
+## Tester l'application
+
+Après avoir suivi les étapes d'installation ci-dessus, un compte de démonstration est disponible pour tester l'interface ce compte sert a crée qui vous pouvez gérer tous les comptes teste :
+
+Patron
+- **Identifiant :** pdg
+- **Mot de passe :** pdg
+
+
+⚠️ Compte de démonstration uniquement — à ne pas réutiliser sur un autre service.
+
 ## Tests
 
 Depuis le dossier `logiciel` :
