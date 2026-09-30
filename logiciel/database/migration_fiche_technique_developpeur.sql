@@ -8,7 +8,7 @@ CREATE TABLE fiches_techniques_developpeurs (
     disponibilite VARCHAR(255) NOT NULL,
     experience_avant_embauche DECIMAL(6, 2) NOT NULL,
     modifie_le TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
+        ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4;
 
 -- Les comptes développeur déjà existants doivent être associés manuellement

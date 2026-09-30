@@ -32,3 +32,6 @@ comptable.txt
 # Fichiers de configuration
 *.pyc
 .env
+
+# Documents téléversés par les utilisateurs
+storage/fichiers_projets/

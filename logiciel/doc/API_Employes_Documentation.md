@@ -163,7 +163,7 @@ Le manager et le PDG peuvent consulter `GET /manager/projets/<projet_id>/fichier
 
 `GET /manager/qui-fait-quoi?employe_id=7&projet=Refonte%20API&tache=Développement` recherche une tâche exacte et retourne le développeur, le projet et la tâche correspondants.
 
-Le schéma actuel associe un projet à un seul employé. La constitution d'une équipe multi-développeurs nécessitera une table de liaison avant de pouvoir être persistée par une route.
+Les projets peuvent être partagés entre plusieurs développeurs grâce à `projet_developpeurs`. Les tâches peuvent être rattachées à un développeur via `taches.employe_id`; appliquer les migrations d'équipe et de tâches décrites plus haut avant d'utiliser ces fonctionnalités.
 
 ---
 

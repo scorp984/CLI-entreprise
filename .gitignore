@@ -1,0 +1,9 @@
+# Environnement Python local
+.venv/
+
+# Configuration locale contenant des identifiants
+.env
+.env.*
+
+# Documents téléversés par les utilisateurs
+logiciel/storage/fichiers_projets/
