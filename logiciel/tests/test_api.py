@@ -1,6 +1,10 @@
 import unittest
+import os
+import tempfile
+from io import BytesIO
 from datetime import date
 from unittest.mock import patch
+from werkzeug.datastructures import MultiDict
 
 from api.api import app, completed_years_since
 
@@ -624,6 +628,283 @@ class TestCors(unittest.TestCase):
             response.headers.get("Access-Control-Allow-Origin"),
             "http://localhost:5500",
         )
+
+
+class TestDeveloperProjectFiles(unittest.TestCase):
+    def setUp(self):
+        self.client = app.test_client()
+        with self.client.session_transaction() as session:
+            session["compte_id"] = 9
+            session["role"] = "developpeur"
+
+    def connection(self, extra_responses=None):
+        responses = {
+            (SESSION_ACCOUNT_QUERY, (9,)): [
+                {"id": 9, "role": "developpeur", "actif": 1}
+            ],
+            (
+                "SELECT e.id, e.nom, e.prenom, e.date_embauche "
+                "FROM comptes c JOIN employes e ON e.id = c.employe_id "
+                "WHERE c.id = %s AND c.role = 'developpeur' AND e.poste = 'developpeur'",
+                (9,),
+            ): [{"id": 7, "nom": "Martin", "prenom": "Camille"}],
+            (
+                "SELECT p.id FROM projets p "
+                "JOIN projet_developpeurs pd ON pd.projet_id = p.id "
+                "WHERE p.id = %s AND pd.employe_id = %s",
+                (3, 7),
+            ): [{"id": 3}],
+        }
+        responses.update(extra_responses or {})
+        return FakeConnection([], responses=responses)
+
+    def test_upload_stocke_le_fichier_hors_du_webroot_et_enregistre_ses_metadonnees(self):
+        connection = self.connection()
+        with tempfile.TemporaryDirectory() as storage_directory:
+            with patch("api.api.PROJECT_FILES_DIRECTORY", storage_directory), \
+                    patch("api.api.get_connection", return_value=connection):
+                response = self.client.post(
+                    "/developpeur/projets/3/fichiers",
+                    data={
+                        "etape": "diagramme",
+                        "fichier": (BytesIO(b"contenu pdf"), "diagramme.pdf"),
+                    },
+                    content_type="multipart/form-data",
+                )
+
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.get_json()["id"], 42)
+            insert_query, insert_parameters = next(
+                (query, parameters)
+                for query, parameters in connection.executed
+                if query.startswith("INSERT INTO fichiers_projets")
+            )
+            self.assertEqual(insert_parameters[:4], (3, 7, "diagramme", "diagramme.pdf"))
+            self.assertTrue(os.path.isfile(os.path.join(storage_directory, insert_parameters[4])))
+
+    def test_upload_enregistre_plusieurs_fichiers_dans_la_meme_etape(self):
+        connection = self.connection()
+        request_data = MultiDict([
+            ("etape", "diagramme"),
+            ("fichier", (BytesIO(b"pdf"), "diagramme.pdf")),
+            ("fichier", (BytesIO(b"png"), "schema.png")),
+        ])
+        with tempfile.TemporaryDirectory() as storage_directory:
+            with patch("api.api.PROJECT_FILES_DIRECTORY", storage_directory), \
+                    patch("api.api.get_connection", return_value=connection):
+                response = self.client.post(
+                    "/developpeur/projets/3/fichiers",
+                    data=request_data,
+                    content_type="multipart/form-data",
+                )
+
+            insert_parameters = [
+                parameters
+                for query, parameters in connection.executed
+                if query.startswith("INSERT INTO fichiers_projets")
+            ]
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(len(insert_parameters), 2)
+            self.assertEqual(
+                {parameters[3] for parameters in insert_parameters},
+                {"diagramme.pdf", "schema.png"},
+            )
+            self.assertEqual(len(os.listdir(storage_directory)), 2)
+
+    def test_upload_refuse_un_projet_dont_le_developpeur_n_est_pas_membre(self):
+        membership_query = (
+            "SELECT p.id FROM projets p "
+            "JOIN projet_developpeurs pd ON pd.projet_id = p.id "
+            "WHERE p.id = %s AND pd.employe_id = %s"
+        )
+        connection = self.connection({(membership_query, (3, 7)): []})
+        with patch("api.api.get_connection", return_value=connection):
+            response = self.client.post(
+                "/developpeur/projets/3/fichiers",
+                data={
+                    "etape": "diagramme",
+                    "fichier": (BytesIO(b"contenu"), "diagramme.pdf"),
+                },
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(any(
+            query.startswith("INSERT INTO fichiers_projets")
+            for query, _ in connection.executed
+        ))
+
+    def test_telechargement_est_limite_aux_membres_et_renvoie_le_fichier(self):
+        storage_name = "fichier_test.pdf"
+        file_query = (
+            "SELECT id, projet_id, employe_id, nom_original, nom_stockage, "
+            "type_mime, supprime_le FROM fichiers_projets WHERE id = %s"
+        )
+        connection = self.connection({
+            (file_query, (12,)): [{
+                "id": 12,
+                "projet_id": 3,
+                "employe_id": 7,
+                "nom_original": "diagramme.pdf",
+                "nom_stockage": storage_name,
+                "type_mime": "application/pdf",
+                "supprime_le": None,
+            }],
+        })
+        with tempfile.TemporaryDirectory() as storage_directory:
+            with open(os.path.join(storage_directory, storage_name), "wb") as stored_file:
+                stored_file.write(b"contenu pdf")
+            with patch("api.api.PROJECT_FILES_DIRECTORY", storage_directory), \
+                    patch("api.api.get_connection", return_value=connection):
+                response = self.client.get("/developpeur/fichiers/12")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data, b"contenu pdf")
+                self.assertIn("attachment", response.headers["Content-Disposition"])
+                response.close()
+
+    def test_suppression_conserve_la_trace_en_base(self):
+        file_query = (
+            "SELECT id, projet_id, employe_id, nom_original, nom_stockage, "
+            "type_mime, supprime_le FROM fichiers_projets WHERE id = %s"
+        )
+        connection = self.connection({
+            (file_query, (12,)): [{
+                "id": 12,
+                "projet_id": 3,
+                "employe_id": 7,
+                "nom_original": "diagramme.pdf",
+                "nom_stockage": "fichier_test.pdf",
+                "type_mime": "application/pdf",
+                "supprime_le": None,
+            }],
+        })
+        with patch("api.api.get_connection", return_value=connection):
+            response = self.client.delete("/developpeur/fichiers/12")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(any(
+            query.startswith("UPDATE fichiers_projets SET supprime_le")
+            for query, _ in connection.executed
+        ))
+
+    def test_l_historique_retourne_les_fichiers_supprimes(self):
+        list_query = (
+            "SELECT id, etape, nom_original, taille, type_mime, ajoute_le, supprime_le "
+            "FROM fichiers_projets WHERE projet_id = %s ORDER BY ajoute_le DESC, id DESC"
+        )
+        connection = self.connection({
+            (list_query, (3,)): [{
+                "id": 12,
+                "etape": "diagramme",
+                "nom_original": "diagramme.pdf",
+                "taille": 120,
+                "type_mime": "application/pdf",
+                "ajoute_le": "2026-09-30 10:00:00",
+                "supprime_le": "2026-09-30 11:00:00",
+            }],
+        })
+        with patch("api.api.get_connection", return_value=connection):
+            response = self.client.get("/developpeur/projets/3/fichiers")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["fichiers"][0]["id"], 12)
+        self.assertIsNotNone(response.get_json()["fichiers"][0]["supprime_le"])
+
+    def test_seul_l_auteur_peut_supprimer_un_fichier(self):
+        file_query = (
+            "SELECT id, projet_id, employe_id, nom_original, nom_stockage, "
+            "type_mime, supprime_le FROM fichiers_projets WHERE id = %s"
+        )
+        connection = self.connection({
+            (file_query, (12,)): [{
+                "id": 12,
+                "projet_id": 3,
+                "employe_id": 11,
+                "nom_original": "diagramme.pdf",
+                "nom_stockage": "fichier_test.pdf",
+                "type_mime": "application/pdf",
+                "supprime_le": None,
+            }],
+        })
+        with patch("api.api.get_connection", return_value=connection):
+            response = self.client.delete("/developpeur/fichiers/12")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(any(
+            query.startswith("UPDATE fichiers_projets SET supprime_le")
+            for query, _ in connection.executed
+        ))
+
+
+class TestManagerProjectFiles(unittest.TestCase):
+    def setUp(self):
+        self.client = app.test_client()
+        with self.client.session_transaction() as session:
+            session["compte_id"] = 1
+            session["role"] = "manager"
+
+    def connection(self, extra_responses=None):
+        responses = {
+            (SESSION_ACCOUNT_QUERY, (1,)): [
+                {"id": 1, "role": "manager", "actif": 1}
+            ],
+        }
+        responses.update(extra_responses or {})
+        return FakeConnection([], responses=responses)
+
+    def test_manager_liste_les_fichiers_et_le_deposant_du_projet(self):
+        project_query = "SELECT id FROM projets WHERE id = %s"
+        files_query = (
+            "SELECT f.id, f.etape, f.nom_original, f.taille, f.type_mime, "
+            "f.ajoute_le, f.supprime_le, e.nom AS employe_nom, "
+            "e.prenom AS employe_prenom "
+            "FROM fichiers_projets f JOIN employes e ON e.id = f.employe_id "
+            "WHERE f.projet_id = %s ORDER BY f.ajoute_le DESC, f.id DESC"
+        )
+        connection = self.connection({
+            (project_query, (3,)): [{"id": 3}],
+            (files_query, (3,)): [{
+                "id": 12,
+                "etape": "diagramme",
+                "nom_original": "diagramme.pdf",
+                "taille": 120,
+                "type_mime": "application/pdf",
+                "ajoute_le": "2026-09-30 10:00:00",
+                "supprime_le": None,
+                "employe_nom": "Martin",
+                "employe_prenom": "Camille",
+            }],
+        })
+        with patch("api.api.get_connection", return_value=connection):
+            response = self.client.get("/manager/projets/3/fichiers")
+
+        self.assertEqual(response.status_code, 200)
+        fichier = response.get_json()["fichiers"][0]
+        self.assertEqual(fichier["depose_par"], "Camille Martin")
+        self.assertEqual(fichier["url"], "/manager/fichiers/12")
+
+    def test_manager_telecharge_un_fichier_actif(self):
+        file_query = (
+            "SELECT nom_original, nom_stockage, type_mime, supprime_le "
+            "FROM fichiers_projets WHERE id = %s"
+        )
+        connection = self.connection({
+            (file_query, (12,)): [{
+                "nom_original": "diagramme.pdf",
+                "nom_stockage": "fichier_test.pdf",
+                "type_mime": "application/pdf",
+                "supprime_le": None,
+            }],
+        })
+        with tempfile.TemporaryDirectory() as storage_directory:
+            with open(os.path.join(storage_directory, "fichier_test.pdf"), "wb") as stored_file:
+                stored_file.write(b"document transmis au manager")
+            with patch("api.api.PROJECT_FILES_DIRECTORY", storage_directory), \
+                    patch("api.api.get_connection", return_value=connection):
+                response = self.client.get("/manager/fichiers/12")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.data, b"document transmis au manager")
+                response.close()
 
 
 if __name__ == "__main__":

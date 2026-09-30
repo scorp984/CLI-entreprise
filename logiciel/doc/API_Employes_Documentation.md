@@ -28,8 +28,14 @@ Toutes les requêtes et réponses utilisent le format JSON. Le header `Content-T
 | `GET` | `/developpeur/fiche` | Charge la fiche du développeur connecté |
 | `POST` | `/developpeur/fiche` | Crée sa fiche technique |
 | `PUT` | `/developpeur/fiche` | Modifie sa fiche technique |
+| `GET` | `/developpeur/projets/<projet_id>/fichiers` | Liste les fichiers et leur historique pour un projet |
+| `POST` | `/developpeur/projets/<projet_id>/fichiers` | Ajoute un fichier à une étape du projet |
+| `GET` | `/developpeur/fichiers/<id>` | Télécharge un fichier actif du projet |
+| `DELETE` | `/developpeur/fichiers/<id>` | Supprime logiquement un fichier déposé par le développeur connecté |
 | `GET` | `/manager/projets` | Liste les projets, éventuellement filtrés par développeur |
 | `POST` | `/manager/projets` | Attribue un projet à un ou plusieurs développeurs |
+| `GET` | `/manager/projets/<projet_id>/fichiers` | Liste les fichiers déposés pour un projet |
+| `GET` | `/manager/fichiers/<id>` | Télécharge un fichier actif d'un projet |
 | `GET` | `/manager/developpeurs/<id>/fiche` | Retourne les projets et tâches d'un développeur |
 | `GET` | `/manager/qui-fait-quoi` | Recherche une tâche affectée |
 | `GET` | `/employes` | Récupère la liste de tous les employés |
@@ -137,6 +143,23 @@ La réponse inclut également `fiche_technique` quand le développeur a renseign
 `GET /developpeur/fiche` retourne la fiche du développeur connecté et indique `fiche_complete: false` s'il doit encore la remplir. `POST /developpeur/fiche` crée sa fiche; `PUT /developpeur/fiche` la modifie. Ces routes utilisent le compte de la session et refusent les autres rôles.
 
 Le champ `experience_avant_embauche` correspond à l'expérience déclarée avant son arrivée. L'API calcule l'expérience totale en lui ajoutant les années complètes depuis la date `employes.date_embauche`; un an supplémentaire n'est compté qu'à chaque anniversaire d'embauche.
+
+## Fichiers de projet
+
+Appliquer une fois `database/migration_fichiers_projets.sql` à la base depuis la racine du dépôt :
+
+```powershell
+Get-Content -Raw ".\logiciel\database\migration_fichiers_projets.sql" |
+  & "C:\UwAmp\bin\database\mysql-5.6.20\bin\mysql.exe" -u patron -p cli_entreprise
+```
+
+Les fichiers sont stockés sous `logiciel/storage/fichiers_projets`, hors du dossier public du frontend. Le chemin peut être remplacé avec la variable d'environnement `PROJECT_FILES_DIRECTORY`.
+
+Les routes de fichiers sont réservées au développeur connecté et vérifient son appartenance au projet via `projet_developpeurs`. Pour déposer un ou plusieurs fichiers de la même étape, envoyer une requête `multipart/form-data` à `POST /developpeur/projets/<projet_id>/fichiers` avec un champ `fichier` répété et un champ `etape` (`diagramme`, `dossier` ou `compte-rendu`). La requête entière, fichiers cumulés, est limitée à 25 Mo; les extensions acceptées dépendent de l'étape.
+
+`GET /developpeur/projets/<projet_id>/fichiers` retourne les métadonnées, y compris les fichiers supprimés afin de conserver l'historique. `DELETE /developpeur/fichiers/<id>` marque le fichier comme supprimé sans effacer son contenu stocké; il n'est alors plus téléchargeable. Seul le développeur qui l'a déposé peut le supprimer.
+
+Le manager et le PDG peuvent consulter `GET /manager/projets/<projet_id>/fichiers` pour voir les documents, leur étape, leur auteur et leur statut. Le téléchargement se fait avec `GET /manager/fichiers/<id>`. Les fichiers supprimés restent visibles dans l'historique mais ne sont pas téléchargeables.
 
 `GET /manager/qui-fait-quoi?employe_id=7&projet=Refonte%20API&tache=Développement` recherche une tâche exacte et retourne le développeur, le projet et la tâche correspondants.
 

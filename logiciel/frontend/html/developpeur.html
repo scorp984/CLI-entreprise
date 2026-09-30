@@ -57,6 +57,55 @@
         </table>
     </section>
 
+    <section class="mission" aria-labelledby="mission-title">
+        <h2 id="mission-title">Mission a suivre</h2>
+        <p>Desciption des étapes à accomplir.</p>
+        <label for="mission-projet">Projet concerné</label>
+        <select id="mission-projet">
+            <option value="">Sélectionner un projet...</option>
+        </select>
+        <p class="mission-message" id="mission-message" role="status" aria-live="polite"></p>
+            <ol>
+                <li>
+                    <h3>Étape 1</h3>
+                    <label class="mission-upload-label" for="diagramme">Diagramme</label>
+                    <input type="file" id="diagramme" name="diagramme" accept=".png, .jpg, .jpeg, .pdf" aria-label="Fichiers du diagramme" multiple disabled>
+                    <div class="mission-upload-actions">
+                        <button class="btn mission-upload-button" id="envoyer-diagramme" type="button" disabled>Envoyer</button>
+                        <button class="btn mission-upload-button mission-upload-clear" id="retirer-diagramme" type="button" disabled>Retirer</button>
+                    </div>
+                </li>
+                <li>
+                    <h3>Étape 2</h3>
+                    <label class="mission-upload-label" for="dossier">Dossier avant programmation</label>
+                    <input type="file" id="dossier" name="dossier" accept=".zip, .rar, .7z" aria-label="Dossiers avant programmation" multiple disabled>
+                    <div class="mission-upload-actions">
+                        <button class="btn mission-upload-button" id="envoyer-dossier" type="button" disabled>Envoyer</button>
+                        <button class="btn mission-upload-button mission-upload-clear" id="retirer-dossier" type="button" disabled>Retirer</button>
+                    </div>
+                </li>
+                <li>
+                    <h3>Étape 3</h3>
+                    <p>Programmation</p>
+                </li>
+                <li>
+                    <h3>Étape 4</h3>
+                    <label class="mission-upload-label" for="compte-rendu">Tests et compte rendu</label>
+                    <input type="file" id="compte-rendu" name="compte-rendu" accept=".pdf, .docx" aria-label="Comptes rendus des tests" multiple disabled>
+                    <div class="mission-upload-actions">
+                        <button class="btn mission-upload-button" id="envoyer-compte-rendu" type="button" disabled>Envoyer</button>
+                        <button class="btn mission-upload-button mission-upload-clear" id="retirer-compte-rendu" type="button" disabled>Retirer</button>
+                    </div>
+                </li>
+                <li>
+                    <h3>Étape 5</h3>
+                    <p>Envoyer au client</p>
+                </li>
+            </ol>
+            <h3 class="mission-files-title">Fichiers du projet</h3>
+            <ul class="mission-file-list" id="mission-fichiers" aria-live="polite"></ul>
+    </section>
+
     <button class="btn" id="logout-button" type="button">Déconnexion</button>
     <script src="../js/developpeur.js"></script>
 </body>

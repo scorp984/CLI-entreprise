@@ -1,5 +1,13 @@
   const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:5000`;
   let developpeurs = [];
+  const documentsProjetSelect = document.getElementById("documents-projet");
+  const documentsResultat = document.getElementById("resultat-documents");
+  const documentsList = document.getElementById("documents-list");
+  const libellesEtapes = {
+    diagramme: "Diagramme",
+    dossier: "Dossier avant programmation",
+    "compte-rendu": "Tests et compte rendu"
+  };
 
   async function requeteApi(path, options = {}) {
     const reponse = await fetch(`${API_BASE_URL}${path}`, {
@@ -16,6 +24,96 @@
       throw new Error(resultat.error || "La requête API a échoué.");
     }
     return resultat;
+  }
+
+  async function chargerProjetsDocuments() {
+    try {
+      const projets = await requeteApi("/manager/projets");
+      documentsProjetSelect.replaceChildren();
+      projets.forEach(projet => {
+        const option = document.createElement("option");
+        option.value = projet.id;
+        const membres = (projet.developpeurs || [])
+          .map(membre => `${membre.prenom} ${membre.nom}`)
+          .join(", ");
+        option.textContent = membres ? `${projet.nom} — ${membres}` : projet.nom;
+        documentsProjetSelect.append(option);
+      });
+
+      documentsProjetSelect.disabled = projets.length === 0;
+      if (!projets.length) {
+        documentsResultat.textContent = "Aucun projet disponible.";
+        documentsList.replaceChildren();
+        return;
+      }
+      documentsProjetSelect.value = String(projets[0].id);
+      await chargerDocumentsProjet();
+    } catch (error) {
+      documentsResultat.textContent = `Impossible de charger les projets : ${error.message}`;
+    }
+  }
+
+  async function chargerDocumentsProjet() {
+    const projetId = documentsProjetSelect.value;
+    documentsList.replaceChildren();
+    if (!projetId) return;
+
+    documentsResultat.textContent = "Chargement des documents...";
+    try {
+      const resultat = await requeteApi(`/manager/projets/${projetId}/fichiers`);
+      if (documentsProjetSelect.value !== projetId) return;
+      if (!resultat.fichiers.length) {
+        const emptyItem = document.createElement("li");
+        emptyItem.textContent = "Aucun document déposé pour ce projet.";
+        documentsList.append(emptyItem);
+      }
+
+      resultat.fichiers.forEach(fichier => {
+        const item = document.createElement("li");
+        const description = document.createElement("span");
+        const etape = libellesEtapes[fichier.etape] || fichier.etape;
+        const auteur = fichier.depose_par ? `, déposé par ${fichier.depose_par}` : "";
+        const statut = fichier.supprime_le ? " (supprimé)" : "";
+        description.textContent = `${etape} : ${fichier.nom_original}${auteur}${statut}`;
+        item.append(description);
+
+        if (!fichier.supprime_le) {
+          const downloadButton = document.createElement("button");
+          downloadButton.className = "btn document-download";
+          downloadButton.type = "button";
+          downloadButton.textContent = "Télécharger";
+          downloadButton.addEventListener("click", () => {
+            void telechargerDocumentProjet(fichier);
+          });
+          item.append(downloadButton);
+        }
+        documentsList.append(item);
+      });
+      documentsResultat.textContent = "";
+    } catch (error) {
+      documentsResultat.textContent = `Impossible de charger les documents : ${error.message}`;
+    }
+  }
+
+  async function telechargerDocumentProjet(fichier) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${fichier.url}`, {
+        credentials: "include"
+      });
+      if (!response.ok) {
+        throw new Error("Le téléchargement a échoué.");
+      }
+      const downloadUrl = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = fichier.nom_original;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    } catch (error) {
+      documentsResultat.textContent = `Impossible de télécharger le document : ${error.message}`;
+    }
   }
  
   function remplirSelects() {
@@ -89,6 +187,8 @@
   remplirSelects();
   document.getElementById("equipe-developpeurs").addEventListener("change", afficherChampsTachesEquipe);
   chargerDeveloppeurs();
+  chargerProjetsDocuments();
+  documentsProjetSelect.addEventListener("change", chargerDocumentsProjet);
  
   // Navigation entre panneaux
   const cards = document.querySelectorAll(".card[data-target]");

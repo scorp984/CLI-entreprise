@@ -31,11 +31,12 @@ h1 {
 }
 
 .panel,
-.projet {
+.projet,
+.mission {
 	padding: 28px;
 	background: #fff;
 	border: 1px solid #ddd;
-	border-radius: 10px;
+	border-radius: 8px;
 	box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
 }
 
@@ -48,10 +49,186 @@ h1 {
 }
 
 .panel h2,
-.projet h2 {
+.projet h2,
+.mission h2 {
 	margin: 0 0 16px;
 	color: #111;
 	font-size: 20px;
+}
+
+.mission {
+	margin-top: 20px;
+}
+
+.mission > p {
+	margin: 0 0 20px;
+	color: #555;
+	line-height: 1.5;
+}
+
+.mission > label {
+	display: block;
+	margin: 0 0 6px;
+}
+
+.mission select {
+	width: 100%;
+	max-width: 520px;
+	min-height: 40px;
+	margin-bottom: 16px;
+	padding: 9px 10px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	background: #fff;
+	color: #222;
+	font: inherit;
+}
+
+.mission-message {
+	min-height: 20px;
+	font-size: 14px;
+}
+
+.mission ol {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	counter-reset: mission-step;
+}
+
+.mission ol > li {
+	position: relative;
+	margin-top: 12px;
+	padding: 16px 18px 16px 62px;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	background: #f7f7f7;
+	counter-increment: mission-step;
+}
+
+.mission ol > li::before {
+	position: absolute;
+	top: 16px;
+	left: 16px;
+	display: grid;
+	width: 30px;
+	height: 30px;
+	place-items: center;
+	border-radius: 50%;
+	background: #e5e5e5;
+	color: #111;
+	content: counter(mission-step);
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.mission ol > li h3 {
+	margin: 0 0 5px;
+	color: #111;
+	font-size: 16px;
+}
+
+.mission ol > li p,
+.mission-upload-label {
+	display: block;
+	margin: 0;
+	color: #555;
+	line-height: 1.45;
+}
+
+.mission input[type="file"] {
+	display: block;
+	width: 100%;
+	min-height: 42px;
+	margin-top: 12px;
+	padding: 6px;
+	border-color: #ccc;
+	background: #fff;
+}
+
+.mission input[type="file"]::file-selector-button {
+	margin-right: 10px;
+	padding: 7px 11px;
+	border: 1px solid #1c1c1c;
+	border-radius: 4px;
+	background: #1c1c1c;
+	color: #fff;
+	font: inherit;
+	cursor: pointer;
+}
+
+.mission input[type="file"]::file-selector-button:hover {
+	background: #333;
+}
+
+.mission input[type="file"]:disabled {
+	background: #f7f7f7;
+	cursor: not-allowed;
+}
+
+.mission-upload-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.mission .mission-upload-button {
+	min-height: 34px;
+	margin: 0;
+	padding: 7px 12px;
+	font-size: 14px;
+}
+
+.mission .mission-upload-clear {
+	background: #fff;
+	color: #1c1c1c;
+}
+
+.mission .mission-upload-clear:hover {
+	background: #f0f0f0;
+}
+
+.mission .mission-upload-button:disabled {
+	border-color: #ccc;
+	background: #eee;
+	color: #777;
+	cursor: not-allowed;
+}
+
+.mission-files-title {
+	margin: 24px 0 8px;
+	color: #111;
+	font-size: 16px;
+}
+
+.mission-file-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mission-file-list li {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 10px 0;
+	border-top: 1px solid #ddd;
+}
+
+.mission-file-list li span {
+	flex: 1;
+	min-width: 180px;
+	color: #333;
+	overflow-wrap: anywhere;
+}
+
+.mission .mission-file-action {
+	min-height: 32px;
+	margin: 0;
+	padding: 6px 10px;
+	font-size: 13px;
 }
 
 #fiche-panel > p {
@@ -170,8 +347,18 @@ input:focus {
 	}
 
 	.panel,
-	.projet {
+	.projet,
+	.mission {
 		padding: 18px;
+	}
+
+	.mission ol > li {
+		padding: 14px 12px 14px 52px;
+	}
+
+	.mission li::before {
+		top: 14px;
+		left: 12px;
 	}
 
 	#projets-table {

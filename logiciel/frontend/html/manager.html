@@ -27,6 +27,10 @@
       <h2>Constituer une équipe</h2>
       <p>Formez une équipe de développeurs pour un projet donné.</p>
     </div>
+    <div class="card" data-target="panel-documents">
+      <h2>Documents des projets</h2>
+      <p>Consultez les fichiers déposés par les développeurs.</p>
+    </div>
     <div class="card"  href= "../html/index.html"id="logout-card">
       <h2>Déconnexion</h2>
       <p>Fermez votre session sur cet appareil.</p>
@@ -70,6 +74,16 @@
     <select id="qfq-employe"></select>
     <button class="btn" onclick="quiFaitQuoi()">Voir ses projets et ses tâches</button>
     <div class="resultat" id="resultat-qfq"></div>
+  </div>
+
+  <div class="panel" id="panel-documents">
+    <h3>Documents des projets</h3>
+    <label for="documents-projet">Projet</label>
+    <select id="documents-projet">
+      <option value="">Chargement des projets...</option>
+    </select>
+    <div class="resultat" id="resultat-documents" role="status" aria-live="polite"></div>
+    <ul class="documents-list" id="documents-list" aria-live="polite"></ul>
   </div>
  
   <!-- Panel : Constituer une équipe -->

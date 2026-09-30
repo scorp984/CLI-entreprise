@@ -6,14 +6,17 @@ déconnexion, gestion du compte courant et gestion des employés.
 
 from functools import wraps  # Conserve le nom de la fonction quand on crée un décorateur.
 from datetime import date, datetime
+import mimetypes
 import math
 import os  # Permet de lire les variables de configuration du système.
+import uuid
 
 # Flask fournit le serveur web et les outils pour créer des routes HTTP.
 # jsonify transforme automatiquement des dictionnaires Python en réponses JSON.
 # request contient les données envoyées par le frontend.
 # session conserve temporairement l'identité de l'utilisateur connecté.
-from flask import Flask, jsonify, request, session
+from flask import Flask, jsonify, request, send_file, session
+from werkzeug.utils import secure_filename
 
 # Ces fonctions servent à protéger les mots de passe dans la base de données.
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -31,6 +34,22 @@ from database.data import get_connection
 # En production, elle doit être définie dans une variable d'environnement.
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-a-remplacer")
+PROJECT_FILES_DIRECTORY = os.path.abspath(os.environ.get(
+    "PROJECT_FILES_DIRECTORY",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "storage", "fichiers_projets"),
+))
+PROJECT_FILE_MAX_BYTES = 25 * 1024 * 1024
+PROJECT_FILE_EXTENSIONS = {
+    "diagramme": {".png", ".jpg", ".jpeg", ".pdf"},
+    "dossier": {".zip", ".rar", ".7z"},
+    "compte-rendu": {".pdf", ".docx"},
+}
+app.config["MAX_CONTENT_LENGTH"] = PROJECT_FILE_MAX_BYTES
+
+
+@app.errorhandler(413)
+def request_too_large(_error):
+    return jsonify({"error": "Le fichier dépasse la limite de 25 Mo"}), 413
 
 
 def get_session_account():
@@ -604,6 +623,185 @@ def developer_technical_sheet():
         conn.close()
 
 
+def developer_has_project_access(cursor, employe_id, projet_id):
+    cursor.execute(
+        "SELECT p.id FROM projets p "
+        "JOIN projet_developpeurs pd ON pd.projet_id = p.id "
+        "WHERE p.id = %s AND pd.employe_id = %s",
+        (projet_id, employe_id),
+    )
+    return cursor.fetchone() is not None
+
+
+def project_file_payload(fichier, download_path="/developpeur/fichiers"):
+    payload = {
+        "id": fichier["id"],
+        "etape": fichier["etape"],
+        "nom_original": fichier["nom_original"],
+        "taille": fichier["taille"],
+        "type_mime": fichier["type_mime"],
+        "ajoute_le": fichier["ajoute_le"],
+        "supprime_le": fichier["supprime_le"],
+        "url": f"{download_path}/{fichier['id']}",
+    }
+    if "employe_nom" in fichier and "employe_prenom" in fichier:
+        payload["depose_par"] = f"{fichier['employe_prenom']} {fichier['employe_nom']}"
+    return payload
+
+
+@app.route("/developpeur/projets/<int:projet_id>/fichiers", methods=["GET", "POST"])
+@developer_required
+def developer_project_files(projet_id):
+    """Liste ou ajoute les fichiers d'un projet accessible au développeur."""
+    conn = get_connection()
+    if conn is None:
+        return jsonify({"error": "Erreur de connexion à la base de données"}), 500
+
+    cursor = conn.cursor(dictionary=True)
+    stored_paths = []
+    try:
+        developer = get_linked_developer(cursor)
+        if developer is None:
+            return jsonify({
+                "error": "Ce compte développeur n'est pas encore associé à une fiche employé"
+            }), 409
+        if not developer_has_project_access(cursor, developer["id"], projet_id):
+            return jsonify({"error": "Projet introuvable ou accès refusé"}), 404
+
+        if request.method == "GET":
+            cursor.execute(
+                "SELECT id, etape, nom_original, taille, type_mime, ajoute_le, supprime_le "
+                "FROM fichiers_projets WHERE projet_id = %s ORDER BY ajoute_le DESC, id DESC",
+                (projet_id,),
+            )
+            return jsonify({
+                "fichiers": [project_file_payload(row) for row in cursor.fetchall()]
+            }), 200
+
+        uploaded_files = request.files.getlist("fichier")
+        etape = request.form.get("etape", "")
+        if etape not in PROJECT_FILE_EXTENSIONS:
+            return jsonify({"error": "Étape de dépôt invalide"}), 400
+        if not uploaded_files or any(not fichier.filename for fichier in uploaded_files):
+            return jsonify({"error": "Aucun fichier reçu"}), 400
+
+        validated_files = []
+        for uploaded_file in uploaded_files:
+            original_name = secure_filename(uploaded_file.filename)
+            extension = os.path.splitext(original_name)[1].lower()
+            if not original_name or extension not in PROJECT_FILE_EXTENSIONS[etape]:
+                return jsonify({"error": "Type de fichier non autorisé pour cette étape"}), 400
+
+            uploaded_file.stream.seek(0, os.SEEK_END)
+            file_size = uploaded_file.stream.tell()
+            uploaded_file.stream.seek(0)
+            if file_size == 0:
+                return jsonify({"error": f"Le fichier {original_name} est vide"}), 400
+            if file_size > PROJECT_FILE_MAX_BYTES:
+                return jsonify({"error": f"Le fichier {original_name} dépasse la limite de 25 Mo"}), 413
+
+            mime_type = mimetypes.guess_type(original_name)[0] or "application/octet-stream"
+            validated_files.append((uploaded_file, original_name, extension, file_size, mime_type))
+
+        os.makedirs(PROJECT_FILES_DIRECTORY, exist_ok=True)
+        created_ids = []
+        for uploaded_file, original_name, extension, file_size, mime_type in validated_files:
+            stored_name = f"{uuid.uuid4().hex}{extension}"
+            stored_path = os.path.join(PROJECT_FILES_DIRECTORY, stored_name)
+            stored_paths.append(stored_path)
+            uploaded_file.save(stored_path)
+            cursor.execute(
+                "INSERT INTO fichiers_projets "
+                "(projet_id, employe_id, etape, nom_original, nom_stockage, type_mime, taille) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (
+                    projet_id, developer["id"], etape, original_name,
+                    stored_name, mime_type, file_size,
+                ),
+            )
+            created_ids.append(cursor.lastrowid)
+
+        conn.commit()
+        return jsonify({
+            "message": f"{len(created_ids)} fichier(s) ajouté(s) au projet",
+            "id": created_ids[0],
+            "ids": created_ids,
+        }), 201
+    except Exception:
+        conn.rollback()
+        for stored_path in stored_paths:
+            if os.path.isfile(stored_path):
+                try:
+                    os.remove(stored_path)
+                except OSError:
+                    app.logger.exception("Impossible de nettoyer un fichier après échec d'enregistrement")
+        app.logger.exception("Erreur lors de la gestion des fichiers du projet")
+        return jsonify({"error": "Erreur lors de l'enregistrement du fichier"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route("/developpeur/fichiers/<int:fichier_id>", methods=["GET", "DELETE"])
+@developer_required
+def developer_project_file(fichier_id):
+    """Télécharge ou supprime logiquement un fichier de projet."""
+    conn = get_connection()
+    if conn is None:
+        return jsonify({"error": "Erreur de connexion à la base de données"}), 500
+
+    cursor = conn.cursor(dictionary=True)
+    try:
+        developer = get_linked_developer(cursor)
+        if developer is None:
+            return jsonify({
+                "error": "Ce compte développeur n'est pas encore associé à une fiche employé"
+            }), 409
+
+        cursor.execute(
+            "SELECT id, projet_id, employe_id, nom_original, nom_stockage, "
+            "type_mime, supprime_le FROM fichiers_projets WHERE id = %s",
+            (fichier_id,),
+        )
+        fichier = cursor.fetchone()
+        if fichier is None or not developer_has_project_access(
+            cursor, developer["id"], fichier["projet_id"]
+        ):
+            return jsonify({"error": "Fichier introuvable ou accès refusé"}), 404
+
+        if request.method == "DELETE":
+            if fichier["employe_id"] != developer["id"]:
+                return jsonify({"error": "Seul l'auteur du dépôt peut supprimer ce fichier"}), 403
+            if fichier["supprime_le"] is not None:
+                return jsonify({"error": "Ce fichier est déjà supprimé"}), 409
+            cursor.execute(
+                "UPDATE fichiers_projets SET supprime_le = CURRENT_TIMESTAMP "
+                "WHERE id = %s AND supprime_le IS NULL",
+                (fichier_id,),
+            )
+            conn.commit()
+            return jsonify({"message": "Fichier supprimé; sa trace est conservée"}), 200
+
+        if fichier["supprime_le"] is not None:
+            return jsonify({"error": "Ce fichier a été supprimé"}), 410
+        stored_path = os.path.join(PROJECT_FILES_DIRECTORY, fichier["nom_stockage"])
+        if not os.path.isfile(stored_path):
+            return jsonify({"error": "Fichier introuvable sur le stockage"}), 404
+        return send_file(
+            stored_path,
+            mimetype=fichier["type_mime"],
+            as_attachment=True,
+            download_name=fichier["nom_original"],
+        )
+    except Exception:
+        conn.rollback()
+        app.logger.exception("Erreur lors de la gestion du fichier de projet")
+        return jsonify({"error": "Erreur lors de la gestion du fichier"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def fetch_developer_projects(cursor, employe_id):
     cursor.execute(
         "SELECT p.id AS projet_id, p.nom, p.date_debut, p.statut, "
@@ -728,6 +926,80 @@ def get_manager_projects():
     except Exception:
         app.logger.exception("Erreur lors de la récupération des projets")
         return jsonify({"error": "Erreur lors de la récupération des projets"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route("/manager/projets/<int:projet_id>/fichiers", methods=["GET"])
+@pdg_or_manager_required
+def manager_project_files(projet_id):
+    """Liste les fichiers et leur historique pour un projet."""
+    conn = get_connection()
+    if conn is None:
+        return jsonify({"error": "Erreur de connexion à la base de données"}), 500
+
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT id FROM projets WHERE id = %s", (projet_id,))
+        if cursor.fetchone() is None:
+            return jsonify({"error": "Projet introuvable"}), 404
+
+        cursor.execute(
+            "SELECT f.id, f.etape, f.nom_original, f.taille, f.type_mime, "
+            "f.ajoute_le, f.supprime_le, e.nom AS employe_nom, "
+            "e.prenom AS employe_prenom "
+            "FROM fichiers_projets f JOIN employes e ON e.id = f.employe_id "
+            "WHERE f.projet_id = %s ORDER BY f.ajoute_le DESC, f.id DESC",
+            (projet_id,),
+        )
+        return jsonify({
+            "fichiers": [
+                project_file_payload(row, "/manager/fichiers")
+                for row in cursor.fetchall()
+            ]
+        }), 200
+    except Exception:
+        app.logger.exception("Erreur lors de la récupération des fichiers du projet")
+        return jsonify({"error": "Erreur lors de la récupération des fichiers"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@app.route("/manager/fichiers/<int:fichier_id>", methods=["GET"])
+@pdg_or_manager_required
+def manager_project_file(fichier_id):
+    """Télécharge un fichier actif d'un projet consultable par le manager."""
+    conn = get_connection()
+    if conn is None:
+        return jsonify({"error": "Erreur de connexion à la base de données"}), 500
+
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT nom_original, nom_stockage, type_mime, supprime_le "
+            "FROM fichiers_projets WHERE id = %s",
+            (fichier_id,),
+        )
+        fichier = cursor.fetchone()
+        if fichier is None:
+            return jsonify({"error": "Fichier introuvable"}), 404
+        if fichier["supprime_le"] is not None:
+            return jsonify({"error": "Ce fichier a été supprimé"}), 410
+
+        stored_path = os.path.join(PROJECT_FILES_DIRECTORY, fichier["nom_stockage"])
+        if not os.path.isfile(stored_path):
+            return jsonify({"error": "Fichier introuvable sur le stockage"}), 404
+        return send_file(
+            stored_path,
+            mimetype=fichier["type_mime"],
+            as_attachment=True,
+            download_name=fichier["nom_original"],
+        )
+    except Exception:
+        app.logger.exception("Erreur lors du téléchargement d'un fichier du projet")
+        return jsonify({"error": "Erreur lors du téléchargement du fichier"}), 500
     finally:
         cursor.close()
         conn.close()
