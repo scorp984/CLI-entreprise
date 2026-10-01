@@ -79,7 +79,7 @@ Dans VS Code, ouvrir `logiciel/frontend/html/index.html` avec Live Server. L'int
 
 ## Tester l'application
 
-Après avoir suivi les étapes d'installation ci-dessus, un compte de démonstration est disponible pour tester l'interface ce compte sert a crée qui vous pouvez gérer tous les comptes teste :
+Après avoir suivi les étapes d'installation ci-dessus, un compte de démonstration est disponible pour tester l'interface du compte **PDG**. Le compte le plus puissant de l'aplication: qui vous permettera de crée , essayer et de tester toute les fonctionnalité:
 
 Patron
 - **Identifiant :** pdg
